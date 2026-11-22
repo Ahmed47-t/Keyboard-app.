@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>KeyConnect — كيبورد الهاتف الكامل</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-tap-highlight-color: transparent; }
+    html, body { width: 100%; height: 100%; overflow: hidden; background: #060a12; color: #f8fafc; font-family: system-ui, sans-serif; }
+    .app { display: flex; flex-direction: column; width: 100%; height: 100%; }
+    .topbar {
+      height: 32px; background: #0b1222; border-bottom: 1px solid #1e293b;
+      display: flex; align-items: center; justify-content: space-between; padding: 0 8px; font-size: 11.5px;
+    }
+    .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #ef4444; margin-left: 5px; }
+    .dot.ok { background: #10b981; box-shadow: 0 0 8px #10b981; }
+    .btn { background: #1e293b; color: #f8fafc; border: 1px solid #334155; border-radius: 6px; padding: 3px 8px; font-size: 11px; }
+    .grid { flex: 1; direction: ltr; display: flex; flex-direction: column; gap: 3px; padding: 4px; }
+    .row { flex: 1; display: flex; gap: 3px; }
+    .row.top { flex: 0.78; }
+    .key {
+      position: relative; background: #1e293b; border: 1px solid #2b3950; border-radius: 7px;
+      display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 15px; color: #fff;
+    }
+    .key.sp { background: #0c1324; font-size: 11.5px; color: #cbd5e1; }
+    .key:active { background: #38bdf8; color: #04131f; }
+    .key.latched { background: rgba(56, 189, 248, 0.35); border-color: #38bdf8; }
+    .sub { position: absolute; top: 2px; right: 4px; font-size: 9px; color: #94a3b8; }
+    .ime-box { flex: 1; display: none; flex-direction: column; padding: 10px; gap: 8px; }
+    .ime-box.show { display: flex; }
+    .grid.hide { display: none; }
+    textarea {
+      flex: 1; background: #0f172a; border: 1px dashed #38bdf8; border-radius: 12px;
+      padding: 12px; color: #fff; font-size: 18px; outline: none; resize: none; user-select: text;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div><span id="dot" class="dot"></span><span id="st">جاري الاتصال باللابتوب...</span></div>
+      <div style="display:flex;gap:5px;">
+        <button id="modeBtn" class="btn">📱 كيبورد الهاتف / صوتي</button>
+        <button id="fsBtn" class="btn">⛶ ملء الشاشة</button>
+      </div>
+    </div>
+
+    <div id="pcGrid" class="grid"></div>
+
+    <div id="imeBox" class="ime-box">
+      <textarea id="imeArea" placeholder="انقر هنا للكتابة بكيبورد هاتفك أو الإملاء الصوتي 🎤..."></textarea>
+      <div style="display:flex;gap:5px;direction:ltr;">
+        <button class="btn" onclick="sendKey('C','KeyC')" style="flex:1;padding:10px;">Ctrl+C</button>
+        <button class="btn" onclick="sendKey('C','KeyV')" style="flex:1;padding:10px;">Ctrl+V</button>
+        <button class="btn" onclick="sendKey('C','KeyZ')" style="flex:1;padding:10px;">Ctrl+Z</button>
+        <button class="btn" onclick="sendKey('A','Tab')" style="flex:1;padding:10px;">Alt+Tab</button>
+        <button class="btn" onclick="sendKey('','Backspace')" style="flex:1;padding:10px;">⌫</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const params = new URLSearchParams(location.search);
+    const pin = params.get('pin') || '';
+    let ws;
+    function connect() {
+      ws = new WebSocket('ws://' + location.host + '/ws?pin=' + encodeURIComponent(pin));
+      ws.onopen = () => {
+        document.getElementById('dot').className = 'dot ok';
+        document.getElementById('st').textContent = 'متصل باللابتوب — اكتب الآن';
+      };
+      ws.onclose = () => {
+        document.getElementById('dot').className = 'dot';
+        document.getElementById('st').textContent = 'إعادة الاتصال تلقائياً...';
+        setTimeout(connect, 1200);
+      };
+    }
+    connect();
+
+    function vib() { if (navigator.vibrate) navigator.vibrate(12); }
+    function sendText(t) { vib(); if (ws && ws.readyState === 1) ws.send('T\t' + t); }
+    function sendKey(mods, k) { vib(); if (ws && ws.readyState === 1) ws.send('K\t' + mods + '\t' + k); }
+    window.sendKey = sendKey;
+
+    const AR = [
+      [
+        { l: 'Esc', k: 'Escape', sp: 1 }, { l: 'تراجع', k: 'KeyZ', m: 'C', sp: 1 },
+        { l: 'نسخ', k: 'KeyC', m: 'C', sp: 1 }, { l: 'لصق', k: 'KeyV', m: 'C', sp: 1 },
+        { l: 'الكل', k: 'KeyA', m: 'C', sp: 1 }, { l: 'Alt+Tab', k: 'Tab', m: 'A', sp: 1 },
+        { l: 'Home', k: 'Home', sp: 1 }, { l: 'End', k: 'End', sp: 1 }, { l: 'Del', k: 'Delete', sp: 1 }
+      ],
+      [
+        { l: 'ذ', s: 'ّ' }, { l: '1', s: '!' }, { l: '2', s: '@' }, { l: '3', s: '#' }, { l: '4', s: '$' },
+        { l: '5', s: '%' }, { l: '6', s: '^' }, { l: '7', s: '&' }, { l: '8', s: '*' }, { l: '9', s: ')' },
+        { l: '0', s: '(' }, { l: '-', s: '_' }, { l: '=', s: '+' }, { l: '⌫', k: 'Backspace', sp: 1, w: 1.7 }
+      ],
+      [
+        { l: 'Tab', k: 'Tab', sp: 1, w: 1.3 },
+        { l: 'ض', s: 'َ', c: 'KeyQ' }, { l: 'ص', s: 'ً', c: 'KeyW' }, { l: 'ث', s: 'ُ', c: 'KeyE' },
+        { l: 'ق', s: 'ٌ', c: 'KeyR' }, { l: 'ف', s: 'لإ', c: 'KeyT' }, { l: 'غ', s: 'إ', c: 'KeyY' },
+        { l: 'ع', s: '‘', c: 'KeyU' }, { l: 'ه', s: '÷', c: 'KeyI' }, { l: 'خ', s: '×', c: 'KeyO' },
+        { l: 'ح', s: '؛', c: 'KeyP' }, { l: 'ج', s: '<' }, { l: 'د', s: '>' }, { l: '\\', s: '|' }
+      ],
+      [
+        { l: 'Caps', caps: 1, sp: 1, w: 1.5 },
+        { l: 'ش', s: 'ِ', c: 'KeyA' }, { l: 'س', s: 'ٍ', c: 'KeyS' }, { l: 'ي', s: ']', c: 'KeyD' },
+        { l: 'ب', s: '[', c: 'KeyF' }, { l: 'ل', s: 'لأ', c: 'KeyG' }, { l: 'ا', s: 'أ', c: 'KeyH' },
+        { l: 'ت', s: 'ـ', c: 'KeyJ' }, { l: 'ن', s: '،', c: 'KeyK' }, { l: 'م', s: '/', c: 'KeyL' },
+        { l: 'ك', s: ':' }, { l: 'ط', s: '"' }, { l: '↵ Enter', k: 'Enter', sp: 1, w: 1.8 }
+      ],
+      [
+        { l: '⇧ Shift', mod: 'S', sp: 1, w: 1.7 },
+        { l: 'ئ', s: '~', c: 'KeyZ' }, { l: 'ء', s: 'ْ', c: 'KeyX' }, { l: 'ؤ', s: '}', c: 'KeyC' },
+        { l: 'ر', s: '{', c: 'KeyV' }, { l: 'لا', s: 'لآ', c: 'KeyB' }, { l: 'ى', s: 'آ', c: 'KeyN' },
+        { l: 'ة', s: '’', c: 'KeyM' }, { l: 'و', s: ',' }, { l: 'ز', s: '.' }, { l: 'ظ', s: '؟' },
+        { l: '▲', k: 'ArrowUp', sp: 1 }
+      ],
+      [
+        { l: 'Ctrl', mod: 'C', sp: 1, w: 1.2 }, { l: '⊞ Win', mod: 'M', sp: 1, w: 1.2 },
+        { l: 'Alt', mod: 'A', sp: 1, w: 1.2 }, { l: '🌐 EN', lang: 'en', sp: 1, w: 1.3 },
+        { l: 'مسافة • اسحب للمؤشر', space: 1, w: 4.4 },
+        { l: '◀', k: 'ArrowLeft', sp: 1 }, { l: '▼', k: 'ArrowDown', sp: 1 }, { l: '▶', k: 'ArrowRight', sp: 1 }
+      ]
+    ];
+
+    const EN = [
+      AR[0],
+      AR[1].map((x, i) => i === 0 ? { l: '`', s: '~' } : x),
+      [{ l: 'Tab', k: 'Tab', sp: 1, w: 1.3 }, ...'qwertyuiop'.split('').map(c => ({ l: c, s: c.toUpperCase(), c: 'Key' + c.toUpperCase() })), { l: '[', s: '{' }, { l: ']', s: '}' }, { l: '\\', s: '|' }],
+      [{ l: 'Caps', caps: 1, sp: 1, w: 1.5 }, ...'asdfghjkl'.split('').map(c => ({ l: c, s: c.toUpperCase(), c: 'Key' + c.toUpperCase() })), { l: ';', s: ':' }, { l: "'", s: '"' }, { l: '↵ Enter', k: 'Enter', sp: 1, w: 1.8 }],
+      [{ l: '⇧ Shift', mod: 'S', sp: 1, w: 1.7 }, ...'zxcvbnm'.split('').map(c => ({ l: c, s: c.toUpperCase(), c: 'Key' + c.toUpperCase() })), { l: ',', s: '<' }, { l: '.', s: '>' }, { l: '/', s: '?' }, { l: '▲', k: 'ArrowUp', sp: 1 }],
+      [
+        { l: 'Ctrl', mod: 'C', sp: 1, w: 1.2 }, { l: '⊞ Win', mod: 'M', sp: 1, w: 1.2 },
+        { l: 'Alt', mod: 'A', sp: 1, w: 1.2 }, { l: '🌐 عربي', lang: 'ar', sp: 1, w: 1.3 },
+        { l: 'Space • Swipe cursor', space: 1, w: 4.4 },
+        { l: '◀', k: 'ArrowLeft', sp: 1 }, { l: '▼', k: 'ArrowDown', sp: 1 }, { l: '▶', k: 'ArrowRight', sp: 1 }
+      ]
+    ];
+
+    let layer = 'ar', caps = false, mods = { C: false, A: false, S: false, M: false };
+    const grid = document.getElementById('pcGrid');
+
+    function activeModStr() {
+      return Object.keys(mods).filter(k => mods[k]).join('');
+    }
+    function clearMods() { mods = { C: false, A: false, S: false, M: false }; render(); }
+
+    function render() {
+      grid.innerHTML = '';
+      const rows = layer === 'ar' ? AR : EN;
+      const sh = mods.S !== caps;
+      rows.forEach((r, idx) => {
+        const rowEl = document.createElement('div');
+        rowEl.className = 'row' + (idx === 0 ? ' top' : '');
+        r.forEach(sp => {
+          const el = document.createElement('div');
+          el.className = 'key' + (sp.sp ? ' sp' : '') + ((sp.mod && mods[sp.mod]) || (sp.caps && caps) ? ' latched' : '');
+          el.style.flex = String(sp.w || 1);
+          if (sp.s && !sh) {
+            const sub = document.createElement('span');
+            sub.className = 'sub'; sub.textContent = sp.s; el.appendChild(sub);
+          }
+          const txt = document.createElement('span');
+          txt.textContent = (sh && sp.s) ? sp.s : sp.l;
+          el.appendChild(txt);
+
+          if (sp.space) {
+            let sx = null, sw = false;
+            el.addEventListener('pointerdown', e => { sx = e.clientX; sw = false; el.setPointerCapture(e.pointerId); });
+            el.addEventListener('pointermove', e => {
+              if (sx === null) return;
+              const dx = e.clientX - sx;
+              if (Math.abs(dx) >= 22) { sw = true; sx = e.clientX; sendKey('', dx > 0 ? 'ArrowRight' : 'ArrowLeft'); }
+            });
+            el.addEventListener('pointerup', () => { if (!sw && sx !== null) sendText(' '); sx = null; });
+          } else {
+            el.addEventListener('pointerdown', e => {
+              e.preventDefault();
+              if (sp.lang) { layer = sp.lang; render(); return; }
+              if (sp.caps) { caps = !caps; render(); return; }
+              if (sp.mod) { mods[sp.mod] = !mods[sp.mod]; render(); return; }
+              if (sp.m) { sendKey(sp.m, sp.k); clearMods(); return; }
+              const mStr = activeModStr();
+              if (sp.k) { sendKey(mStr, sp.k); clearMods(); return; }
+              if ((mods.C || mods.A || mods.M) && sp.c) { sendKey(mStr, sp.c); clearMods(); return; }
+              sendText((sh && sp.s) ? sp.s : sp.l);
+              clearMods();
+            });
+          }
+          rowEl.appendChild(el);
+        });
+        grid.appendChild(rowEl);
+      });
+    }
+    render();
+
+    document.getElementById('fsBtn').onclick = () => {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+      else document.exitFullscreen().catch(() => {});
+    };
+
+    let imeMode = false;
+    document.getElementById('modeBtn').onclick = (e) => {
+      imeMode = !imeMode;
+      grid.classList.toggle('hide', imeMode);
+      document.getElementById('imeBox').classList.toggle('show', imeMode);
+      e.target.textContent = imeMode ? '⌨️ كيبورد PC كامل' : '📱 كيبورد الهاتف / صوتي';
+      if (imeMode) document.getElementById('imeArea').focus();
+    };
+
+    let prev = '';
+    const area = document.getElementById('imeArea');
+    area.addEventListener('input', () => {
+      const v = area.value;
+      if (v.length > prev.length && v.startsWith(prev)) sendText(v.slice(prev.length));
+      else if (v.length < prev.length) { for (let i = 0; i < prev.length - v.length; i++) sendKey('', 'Backspace'); }
+      prev = v;
+    });
+  </script>
+</body>
+</html>
