@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Clean Keyboard Glyph -->
+    <path
+        android:fillColor="#38BDF8"
+        android:pathData="M24,36h60c3.3,0 6,2.7 6,6v24c0,3.3 -2.7,6 -6,6H24c-3.3,0 -6,-2.7 -6,-6V42c0,-3.3 2.7,-6 6,-6z" />
+    <path
+        android:fillColor="#0F172A"
+        android:pathData="M28,43h7v7h-7zM39,43h7v7h-7zM50,43h7v7h-7zM61,43h7v7h-7zM72,43h8v7h-8zM28,53h9v6h-9zM41,53h26v6h-26zM71,53h9v6h-9z" />
+</vector>
