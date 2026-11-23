@@ -46,14 +46,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             return Ok(());
         }
 
-        let mut viewport = eframe::egui::ViewportBuilder::default()
+        let viewport = eframe::egui::ViewportBuilder::default()
             .with_title("KeyConnect — Remote Keyboard Host")
             .with_inner_size([880.0, 560.0])
             .with_min_inner_size([720.0, 460.0]);
-
-        if start_minimized {
-            viewport = viewport.with_minimized(true);
-        }
 
         let native_options = eframe::NativeOptions {
             viewport,
@@ -64,7 +60,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         eframe::run_native(
             "KeyConnect — Remote Keyboard Host",
             native_options,
-            Box::new(move |cc| Ok(Box::new(ui::KeyConnectGui::new(cc, hub_for_ui)))),
+            Box::new(move |cc| {
+                Ok(Box::new(ui::KeyConnectGui::new(
+                    cc,
+                    hub_for_ui,
+                    start_minimized,
+                )))
+            }),
         )?;
 
         Ok(())
