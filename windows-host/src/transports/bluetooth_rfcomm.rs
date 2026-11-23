@@ -131,9 +131,10 @@ mod windows_bt {
 
             let _ = WSASetServiceW(&query_set, RNRSERVICE_REGISTER, 0);
 
+            let rfcomm_port = local_addr.port;
             hub.set_bluetooth_status(format!(
                 "مستقبل البلوتوث RFCOMM جاهز ونشط (قناة {})",
-                local_addr.port
+                rfcomm_port
             ));
 
             loop {

@@ -17,9 +17,17 @@ pub struct KeyConnectGui {
 }
 
 impl KeyConnectGui {
-    pub fn new(cc: &eframe::CreationContext<'_>, hub: Arc<HostHub>) -> Self {
+    pub fn new(
+        cc: &eframe::CreationContext<'_>,
+        hub: Arc<HostHub>,
+        start_minimized: bool,
+    ) -> Self {
         configure_fonts_and_theme(&cc.egui_ctx);
         hub.set_gui_context(cc.egui_ctx.clone());
+        if start_minimized {
+            cc.egui_ctx
+                .send_viewport_cmd(egui::ViewportCommand::Minimized(true));
+        }
 
         Self {
             hub,
