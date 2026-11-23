@@ -13,7 +13,7 @@ permissions:
 jobs:
   build-windows:
     name: Windows Host (Rust Win32 EXE)
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: windows-host
@@ -21,8 +21,15 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install Stable Rust Toolchain
+      - name: Install MinGW-w64 Windows x64 Cross-Compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-mingw-w64-x86-64 libx11-dev libxkbcommon-dev libwayland-dev pkg-config
+
+      - name: Install Stable Rust Toolchain (x86_64-pc-windows-gnu)
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-gnu
 
       - name: Rust Cargo Cache
         uses: Swatinem/rust-cache@v2
@@ -32,13 +39,12 @@ jobs:
       - name: Run Protocol & Crypto Unit Tests
         run: cargo test --verbose
 
-      - name: Build Optimized Windows Release Binary
-        run: cargo build --release
+      - name: Cross-Compile Optimized Windows x64 Release EXE
+        run: cargo build --release --target x86_64-pc-windows-gnu
 
       - name: Stage Executable Artifact
-        shell: pwsh
         run: |
-          Copy-Item target/release/keyconnect-host.exe ../KeyConnect-Windows-x64.exe
+          cp target/x86_64-pc-windows-gnu/release/keyconnect-host.exe ../KeyConnect-Windows-x64.exe
 
       - name: Upload Windows EXE Artifact
         uses: actions/upload-artifact@v4
@@ -57,7 +63,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
