@@ -61,6 +61,7 @@ struct HubInner {
 pub struct HostHub {
     inner: Mutex<HubInner>,
     injector: KeyboardInjector,
+    #[cfg(windows)]
     gui_waker: Mutex<Option<eframe::egui::Context>>,
 }
 
@@ -78,10 +79,12 @@ impl HostHub {
                 dedup_by_device: HashMap::new(),
             }),
             injector: KeyboardInjector::new(),
+            #[cfg(windows)]
             gui_waker: Mutex::new(None),
         })
     }
 
+    #[cfg(windows)]
     pub fn set_gui_context(&self, ctx: eframe::egui::Context) {
         if let Ok(mut guard) = self.gui_waker.lock() {
             *guard = Some(ctx);
@@ -89,6 +92,7 @@ impl HostHub {
     }
 
     fn wake_gui(&self) {
+        #[cfg(windows)]
         if let Ok(guard) = self.gui_waker.lock() {
             if let Some(ctx) = guard.as_ref() {
                 ctx.request_repaint();
